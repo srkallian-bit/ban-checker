@@ -1,6 +1,6 @@
 {
   "name": "ban-checker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "update/server.js",
   "bin": "update/server.js",
   "scripts": {

@@ -6,7 +6,7 @@ const os = require('os');
 const { exec, spawn } = require('child_process');
 
 const isPackaged = typeof process.pkg !== 'undefined';
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 const UPDATE_REPO = 'srkallian/ban-checker';
 
 const rulesDatabase = require('./rules.js');
