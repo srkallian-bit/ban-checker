@@ -1,0 +1,9 @@
+data.db
+data.db-wal
+data.db-shm
+node_modules/
+node/
+dist/
+*.update
+*.old
+*.updater.bat

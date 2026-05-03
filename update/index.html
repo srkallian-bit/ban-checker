@@ -1,0 +1,1039 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ban Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#000;--s1:#0a0a0a;--s2:#111;--s3:#181818;
+  --bd:rgba(255,255,255,.05);--bd2:rgba(255,255,255,.1);
+  --t:#e0e0e0;--t2:#888;--t3:#444;
+  --m:'JetBrains Mono',monospace;--s:'Inter',-apple-system,sans-serif;
+}
+body{font-family:var(--s);background:var(--bg);color:var(--t);line-height:1.5;min-height:100vh;font-size:13px;overflow-x:hidden}
+
+.topbar{position:sticky;top:0;z-index:50;background:#050505;border-bottom:1px solid var(--bd);height:42px;padding:0 20px;display:flex;align-items:center;gap:10px}
+.tb-logo{display:flex;align-items:center;gap:7px}
+.tb-ico{width:22px;height:22px;border-radius:4px;background:#fff;display:flex;align-items:center;justify-content:center}
+.tb-ico svg{width:11px;height:11px;fill:#000}
+.tb-title{font-family:var(--m);font-size:11px;font-weight:700;letter-spacing:.3px}
+.tb-sep{width:1px;height:18px;background:var(--bd2)}
+.tb-chip{padding:2px 8px;border-radius:3px;font-family:var(--m);font-size:10px;font-weight:600;display:inline-flex;align-items:center;gap:4px;background:var(--s2);border:1px solid var(--bd)}
+.tb-chip::before{content:'';width:4px;height:4px;border-radius:50%;background:#fff}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:7px}
+.tb-cog{cursor:pointer;color:var(--t3);transition:.12s;display:flex;align-items:center;padding:2px}.tb-cog:hover{color:var(--t)}
+.tb-cog svg{width:16px;height:16px;fill:currentColor}
+.ck-panel{display:none;position:absolute;top:42px;right:10px;background:#0a0a0a;border:1px solid var(--bd2);border-radius:6px;padding:10px;z-index:60;min-width:280px}
+.ck-panel.show{display:block}
+.ck-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}.ck-row:last-child{margin-bottom:0}
+.ck-row input{flex:1;background:var(--s1);border:1px solid var(--bd);color:var(--t);padding:5px 9px;border-radius:5px;font-family:var(--m);font-size:10px;transition:border-color .15s}.ck-row input:focus{outline:0;border-color:var(--bd2)}
+
+.tb-inp:focus{outline:0;border-color:var(--bd2)}
+.tb-btn{padding:4px 10px;background:0 0;color:var(--t2);border:1px solid var(--bd2);border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;transition:.12s}
+.tb-btn:hover{background:rgba(255,255,255,.04);color:var(--t)}
+.tb-st{font-family:var(--m);font-size:9px}.tb-st.ok{color:#aaa}.tb-st.no{color:#666}
+.tb-load{width:50px;height:2px;background:var(--s2);border-radius:1px;overflow:hidden}
+.tb-load-in{height:100%;width:0;background:#fff;transition:width .3s;border-radius:1px}
+.tb-load-in.done{background:#666}
+.tb-load-txt{font-family:var(--m);font-size:8px;color:var(--t3);min-width:24px;text-align:right}
+
+.wrap{max-width:1800px;margin:0 auto;padding:10px 20px}
+.pnl{background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:8px 14px;margin-bottom:6px}
+
+.search-bar{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.stoggle{display:flex;gap:1px;background:var(--s2);padding:2px;border-radius:5px;border:1px solid var(--bd)}
+.st-btn{padding:5px 9px;background:0 0;border:0;color:var(--t3);cursor:pointer;border-radius:3px;transition:.12s;display:flex;align-items:center;justify-content:center}
+.st-btn svg{width:13px;height:13px;fill:currentColor}
+.st-btn:hover{color:var(--t);background:rgba(255,255,255,.02)}
+.st-btn.on{color:#ddd;background:rgba(255,255,255,.07)}
+.swrap{position:relative;display:flex;align-items:center;flex:1;min-width:160px;max-width:320px}
+.sico{position:absolute;left:9px;color:var(--t3);pointer-events:none}
+.sico svg{width:12px;height:12px;fill:currentColor}
+.swrap input{width:100%;background:var(--s1);border:1px solid var(--bd);color:var(--t);padding:6px 9px 6px 26px;border-radius:5px;font-family:var(--s);font-size:12px;transition:border-color .15s}
+.swrap input:focus{outline:0;border-color:var(--bd2)}
+select{background:var(--s1);border:1px solid var(--bd);color:var(--t);padding:6px 22px 6px 9px;border-radius:5px;font-family:var(--s);font-size:12px;cursor:pointer;appearance:none;-webkit-appearance:none;-moz-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;transition:border-color .15s}
+select:focus{outline:0;border-color:var(--bd2)}
+select option{background:var(--s1);color:var(--t)}
+.tabs{display:flex;gap:1px;background:var(--s2);padding:2px;border-radius:5px;border:1px solid var(--bd)}
+.tab{padding:5px 12px;background:0 0;border:0;color:var(--t2);font-family:var(--s);font-size:12px;font-weight:600;cursor:pointer;border-radius:3px;transition:.12s}
+.tab:hover{color:var(--t);background:rgba(255,255,255,.02)}
+.tab.on{background:rgba(255,255,255,.08);color:#ddd}
+.btn{padding:5px 11px;background:0 0;border:1px solid var(--bd2);color:var(--t2);font-family:var(--s);font-size:12px;font-weight:600;cursor:pointer;border-radius:5px;transition:.12s;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{background:rgba(255,255,255,.04);color:var(--t)}
+.btn.p{background:rgba(255,255,255,.05);color:#ccc;border-color:rgba(255,255,255,.08)}
+.btn.p:hover{background:rgba(255,255,255,.08)}
+.btn svg{width:12px;height:12px;fill:currentColor}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.ps-res{margin-top:4px;max-height:200px;overflow-y:auto}
+.ps-item{display:flex;align-items:center;gap:8px;padding:6px 7px;border-bottom:1px solid var(--bd);cursor:pointer;border-radius:3px;transition:.1s}
+.ps-item:hover{background:rgba(255,255,255,.02)}
+.pn{font-weight:600;font-size:12px}.pn a{color:var(--t);text-decoration:none}.pn a:hover{color:#ccc}
+.pid{font-family:var(--m);font-size:10px;color:var(--t3);cursor:pointer}.pid:hover{color:var(--t2)}
+.av{border-radius:4px;object-fit:cover;flex-shrink:0;background:transparent}
+.av-init{border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:#888;font-family:var(--m);background:var(--s2)}
+
+.table-wrap{background:var(--s1);border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{background:var(--s2)}
+th{padding:8px 12px;text-align:left;font-weight:600;color:var(--t3);text-transform:uppercase;font-size:9px;letter-spacing:1.5px;border-bottom:1px solid var(--bd2);white-space:nowrap}
+tbody tr{transition:.08s;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.02)}
+tbody tr:hover{background:rgba(255,255,255,.015)}
+td{padding:7px 12px;vertical-align:middle}
+
+.player-cell{display:flex;align-items:center;gap:8px;min-width:0}
+.player-cell .av{width:24px;height:24px}
+.player-cell .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:12px;min-width:0}
+.player-cell .name a{color:var(--t);text-decoration:none;transition:color .1s}
+.player-cell .name a:hover{color:#ccc}
+.player-cell .sid{font-family:var(--m);font-size:9px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}.sid:hover{color:var(--t2)}
+.mono{font-family:var(--m);font-weight:500}
+.mono.bold{font-weight:700;color:#aaa}
+.mono.sm{font-size:11px;color:var(--t2)}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;font-family:var(--m);white-space:nowrap;flex-shrink:0;justify-content:center;background:var(--s2);border:1px solid var(--bd);color:var(--t2)}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0;background:#888}
+.badge.er{color:#8af;background:rgba(100,160,255,.1);border-color:rgba(100,160,255,.25)}.badge.er::before{background:#8af}
+.badge.er.strike{text-decoration:line-through;color:rgba(100,160,255,.5);background:rgba(100,160,255,.04);border-color:rgba(100,160,255,.12)}.badge.er.strike::before{background:rgba(100,160,255,.5)}
+.badge.su{color:var(--t3);background:rgba(255,255,255,.02);border-color:var(--bd)}.badge.su::before{background:var(--t3)}
+.badge.ok{color:var(--t3);background:rgba(255,255,255,.01);border-color:var(--bd)}.badge.ok::before{background:var(--t3)}
+
+.ldc{text-align:center;padding:50px 16px}
+.ldsp{width:18px;height:18px;border:2px solid var(--bd);border-top-color:var(--t2);border-radius:50%;animation:spin .5s linear infinite;margin:0 auto 10px}
+.ldt{color:var(--t3);font-family:var(--m);font-size:8px;letter-spacing:2px;text-transform:uppercase}
+.empty{text-align:center;padding:50px 16px;color:var(--t3);font-size:12px}
+
+.tcst{position:fixed;top:10px;right:10px;z-index:1000;display:flex;flex-direction:column;gap:3px}
+.tst{padding:8px 12px;border-radius:5px;background:var(--s1);border:1px solid var(--bd2);color:var(--t);font-size:11px;font-weight:500;animation:tin .12s ease-out}
+@keyframes tin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tout{from{opacity:1}to{opacity:0;transform:translateY(-4px)}}
+
+.pag{display:flex;justify-content:center;align-items:center;gap:5px;padding:8px 12px;margin-top:4px}
+.pgb{padding:5px 10px;border-radius:4px;background:0 0;border:1px solid var(--bd);color:var(--t2);font-family:var(--s);font-size:11px;font-weight:600;cursor:pointer;transition:.1s}
+.pgb:hover{background:rgba(255,255,255,.03);color:var(--t)}
+.pgb.on{background:rgba(255,255,255,.07);color:#ccc;border-color:rgba(255,255,255,.1)}
+.pgb:disabled{opacity:.12;cursor:not-allowed}
+.pgi{font-size:9px;color:var(--t3);font-family:var(--m)}
+
+.dov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;animation:tin .08s ease-out}
+.modal{background:#0a0a0a;border:1px solid var(--bd2);border-radius:8px;max-width:740px;width:96%;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal::-webkit-scrollbar{width:3px}.modal::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+.modal-hdr{padding:20px 24px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:16px}
+.modal-hdr .av{width:52px;height:52px;border-radius:50%}
+.modal-hdr .av-init{width:52px;height:52px;border-radius:50%}
+.modal-info{flex:1;min-width:0}
+.modal-name{font-size:20px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal-sid{font-family:var(--m);font-size:11px;color:var(--t3);margin-top:3px;cursor:pointer}.modal-sid:hover{color:var(--t2)}
+.modal-grp{font-family:var(--m);font-size:12px;color:var(--t2);margin-top:1px}
+.modal-close{background:0 0;border:1px solid var(--bd);color:var(--t3);cursor:pointer;font-size:14px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:.1s}
+.modal-close:hover{color:var(--t);background:rgba(255,255,255,.03)}
+.modal-stats{display:flex;gap:0;border-bottom:1px solid var(--bd)}
+.modal-st{flex:1;text-align:center;padding:14px 4px;border-right:1px solid var(--bd)}.modal-st:last-child{border-right:0}
+.modal-st-v{font-family:var(--m);font-size:17px;font-weight:700}
+.modal-st-l{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.modal-body{padding:18px 24px}
+.modal-section-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px}
+
+.ban-card{padding:10px 12px;border:1px solid #151515;border-radius:6px;margin-bottom:6px;background:#0d0d0d;transition:.1s;cursor:pointer}
+.ban-card:hover{border-color:#222;background:#111}
+.ban-card-top{display:flex;align-items:center;gap:8px}
+.ban-card .badge{flex-shrink:0;justify-content:center;font-size:8px;padding:2px 7px}
+.ban-card-reason{flex:1;font-family:var(--m);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ban-card-dur{font-family:var(--m);font-size:11px;color:var(--t2);flex-shrink:0}
+.ban-card-bot{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:10px;color:var(--t3)}
+.ban-card-bot a{color:var(--t2);text-decoration:none}.ban-card-bot a:hover{text-decoration:underline;color:var(--t)}
+.ban-card-arrow{color:var(--t3);font-size:8px}
+.ban-card-date{margin-left:auto;color:var(--t3);font-family:var(--m);font-size:9px}
+.ban-card-ureason{font-size:9px;color:var(--t3);font-style:italic;margin-top:3px}
+.ban-empty{padding:12px;text-align:center;color:var(--t3);font-size:12px}
+
+.drow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd)}.drow:last-child{border-bottom:0}
+.dlbl{color:var(--t3);font-size:8px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.dval{color:var(--t);font-size:11px;font-weight:500;text-align:right;max-width:60%;font-family:var(--m);display:flex;align-items:center;justify-content:flex-end;gap:5px}
+.dmsg{margin-top:6px;padding:6px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:4px;font-size:10px;color:var(--t2);line-height:1.5}
+.dsug{margin-top:2px;padding:4px 7px;background:rgba(255,255,255,.01);border-left:2px solid var(--t2);border-radius:0 3px 3px 0;font-size:9px;color:var(--t2)}
+.dmsg-v{font-size:10px;font-weight:600;margin-bottom:1px}
+
+@media(max-width:900px){
+  .topbar{padding:6px 10px;min-height:42px;height:auto;flex-wrap:wrap;gap:4px}
+  .wrap{padding:6px 8px}
+  .search-bar{flex-direction:column}
+  .swrap{max-width:100%}
+  .table-scroll{overflow-x:auto}
+  table{min-width:900px}
+}
+</style>
+</head>
+<body>
+<div class="tcst" id="tcst"></div>
+
+<nav class="topbar">
+  <div class="tb-logo">
+    <div class="tb-ico"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+    <span class="tb-title">BAN_CHECKER</span>
+  </div>
+  <div class="tb-sep"></div>
+  <span class="tb-chip" id="suspChip">0 susp</span>
+  <span class="tb-chip" id="invChip">0 inv</span>
+  <div class="tb-right">
+    <div class="tb-load" id="tbLoad"><div class="tb-load-in" id="tbLoadIn"></div></div>
+    <span class="tb-load-txt" id="tbLoadTxt"></span>
+    <div class="tb-sep"></div>
+    <span class="tb-st" id="ckSt"></span>
+    <div class="tb-cog" id="ckCog" onclick="document.getElementById('ckPanel').classList.toggle('show')"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.64.06-.94s-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.44.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 9.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.64-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg></div>
+  </div>
+  <div class="ck-panel" id="ckPanel">
+    <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Cookie Settings</div>
+    <div class="ck-row"><input type="text" id="ckIn" placeholder="Paste cookie from browser..."><button class="tb-btn" onclick="saveCk()">Save</button></div>
+    <div style="font-size:8px;color:var(--t3);margin-top:4px">Copy full Cookie header from browser DevTools (Token + cf_clearance)</div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="pnl search-bar">
+    <div class="stoggle" id="searchToggle">
+      <button class="st-btn on" data-mode="player" title="Search player"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></button>
+      <button class="st-btn" data-mode="ban" title="Search bans"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></button>
+    </div>
+    <div class="swrap">
+      <span class="sico"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span>
+      <input type="text" id="sIn" placeholder="SteamID or name...">
+    </div>
+    <select id="sType" style="display:none"><option value="admin">By admin</option><option value="player">By player</option><option value="reason">By reason</option></select>
+    <div class="tabs">
+      <button class="tab on" data-f="all">All</button>
+      <button class="tab" data-f="problematic">Problematic</button>
+      <button class="tab" data-f="normal">Normal</button>
+    </div>
+    <button class="btn p" id="refBtn" onclick="resetLoad()"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>Refresh</button>
+  </div>
+
+  <div class="ps-res" id="psRes" style="margin-bottom:6px"></div>
+
+  <div class="table-wrap">
+    <div class="table-scroll">
+    <table>
+      <thead><tr>
+        <th style="width:90px">Status</th>
+        <th style="width:22%">Admin</th>
+        <th style="width:22%">Player</th>
+        <th>Reason</th>
+        <th style="width:80px">Duration</th>
+        <th style="width:130px">Date</th>
+        <th style="width:30px"></th>
+      </tr></thead>
+      <tbody id="tbody"><tr><td colspan="7"><div class="ldc"><div class="ldsp"></div><div class="ldt">Loading</div></div></td></tr></tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="pnl pag" id="pag" style="display:none">
+    <button class="pgb" id="ppBtn" onclick="goPg(1)">First</button>
+    <span id="pgNums" style="display:flex;gap:2px"></span>
+    <span class="pgi" id="pgInfo">1/1</span>
+    <button class="pgb" id="npBtn" onclick="chPg(1)">Next</button>
+  </div>
+</div>
+
+<script>
+const rulesDatabase = {
+  "rules": [
+    { "code": "0.4", "variants": ["0.4", "fake admin", "фейк админ", "выдавать себя за админа"], "ban_time": "3d", "stackable": false },
+    { "code": "0.6", "variants": ["0.6", "обман", "развод", "scam", "скам"], "ban_time": ["1w", "perma"], "stackable": false },
+    { "code": "0.7", "variants": ["0.7", "обход наказания", "bypass ban", "обход бана", "обход мута"], "ban_time": "perma", "stackable": false },
+    { "code": "0.8", "variants": ["0.8", "продажа валюты", "rmt", "РМТ"], "ban_time": "perma", "stackable": false },
+    { "code": "0.9", "variants": ["0.9", "урон экономике", "краш экономики"], "ban_time": "perma", "stackable": false },
+    { "code": "0.10", "variants": ["0.10", "продажа аккаунта", "передача аккаунта"], "ban_time": "perma", "stackable": false },
+    { "code": "0.13", "variants": ["0.13"], "ban_time": "1h", "stackable": false },
+    { "code": "0.15", "variants": ["0.15", "обман на разборке"], "ban_time": "3h", "stackable": false },
+    { "code": "0.16", "variants": ["0.16", "спам"], "ban_time": "1d", "stackable": false },
+    { "code": "0.18", "variants": ["0.18", "помеха работе администрации"], "ban_time": "1h", "stackable": false },
+    { "code": "0.19", "variants": ["0.19", "провокация"], "ban_time": "1d", "stackable": false },
+    { "code": "0.21", "variants": ["0.21", "слив игроков"], "ban_time": "1d", "stackable": false },
+    { "code": "0.22", "variants": ["0.22", "читы", "софт"], "ban_time": "1d", "stackable": false },
+    { "code": "0.23", "variants": ["0.23", "обход афк"], "ban_time": "1w", "stackable": false },
+    { "code": "0.24", "variants": ["0.24", "/hobo", "/miner"], "ban_time": "1d", "stackable": false },
+    { "code": "0.25", "variants": ["0.25", "запись обзвона"], "ban_time": "perma", "stackable": false },
+    { "code": "0.27", "variants": ["0.27", "bouncy ball"], "ban_time": "1d", "stackable": false },
+    { "code": "0.29", "variants": ["0.29", "пропы на аукционе"], "ban_time": "1d", "stackable": false },
+    { "code": "0.30", "variants": ["0.30", "угрозы", "шантаж"], "ban_time": "perma", "stackable": false },
+    { "code": "0.31", "variants": ["0.31", "доксинг"], "ban_time": "perma", "stackable": false },
+    { "code": "1.1", "variants": ["1.1", "NonRP", "nonrp", "нонрп", "НонРП", "NRP", "nrp"], "ban_time": "10mi", "stackable": true },
+    { "code": "1.2", "variants": ["1.2", "Leave", "leave", "лив", "ЛИВ", "LE", "le"], "ban_time": ["3h", "6h"], "stackable": false },
+    { "code": "1.3", "variants": ["1.3", "LeaveRP", "leaverp", "ливрп", "ЛИВРП", "LRP", "lrp"], "ban_time": "30mi", "stackable": false },
+    { "code": "1.4", "variants": ["1.4", "FreeDamage", "freedamage", "фридамаг", "ФРИДАМАГ", "FDMG", "fdmg"], "ban_time": "10mi", "stackable": true },
+    { "code": "1.5", "variants": ["1.5", "FreeKill", "freekill", "фрикилл", "ФРИКИЛЛ", "FK", "fk"], "ban_time": "15mi", "stackable": true, "max_stack": 2 },
+    { "code": "1.6", "variants": ["1.6", "RDM", "rdm", "рдм", "РДМ"], "ban_time": "10h", "stackable": false },
+    { "code": "1.7", "variants": ["1.7", "MassRDM", "massrdm", "масс рдм", "MRDM", "mrdm"], "ban_time": ["1d", "1w"], "stackable": false },
+    { "code": "1.8", "variants": ["1.8", "NewLifeRule", "newliferule", "нлр", "НЛР", "NLR", "nlr"], "ban_time": "10mi", "stackable": true },
+    { "code": "1.9", "variants": ["1.9", "FearRP", "fearrp", "фирп", "ФИРП", "FRP", "frp"], "ban_time": "10mi", "stackable": true },
+    { "code": "1.9.1", "variants": ["1.9.1", "Abuse", "abuse"], "ban_time": "20mi", "stackable": true },
+    { "code": "1.10", "variants": ["1.10", "JobAbuse", "jobabuse", "джобабуз", "JA", "ja"], "ban_time": "20mi", "stackable": true },
+    { "code": "1.11", "variants": ["1.11", "FreeArrest", "freearrest", "фриарест", "FA", "fa"], "ban_time": "30mi", "stackable": false },
+    { "code": "1.11.1", "variants": ["1.11.1", "FreeUnArrest", "freeunarrest", "FUA", "fua"], "ban_time": "20mi", "stackable": false },
+    { "code": "1.12", "variants": ["1.12", "MassFreeArrest", "massfreearrest", "масс фриарест", "MFA", "mfa"], "ban_time": ["3h", "10h"], "stackable": false },
+    { "code": "1.13", "variants": ["1.13", "FreeWanted", "freewanted", "фривантед", "FWanted"], "ban_time": "10mi", "stackable": false },
+    { "code": "1.14", "variants": ["1.14", "MassFreeWanted", "massfreewanted", "MFWanted"], "ban_time": "3h", "stackable": false },
+    { "code": "1.15", "variants": ["1.15", "НПВ", "нпв"], "ban_time": "20mi", "stackable": false },
+    { "code": "1.16", "variants": ["1.16", "CustomJob", "customjob", "кастом джоб", "CJ", "cj"], "ban_time": "20mi", "stackable": true },
+    { "code": "1.17.1", "variants": ["1.17.1", "OSA", "osa", "оса", "ОСА", "оскорбление"], "ban_time": "20mi", "stackable": false },
+    { "code": "1.17.2", "variants": ["1.17.2", "OSADM", "osadm", "осадм", "оскорбление админа"], "ban_time": "2h", "stackable": false },
+    { "code": "1.17.3", "variants": ["1.17.3", "OSAR", "osar", "осар", "оскорбление родных"], "ban_time": ["1d","1w"], "stackable": false },
+    { "code": "1.17.4", "variants": ["1.17.4", "OSS", "oss", "осс", "оскорбление сервера"], "ban_time": ["2w", "2mo"], "stackable": false },
+    { "code": "1.20", "variants": ["1.20", "РМР", "рмр", "расизм", "нацизм"], "ban_time": ['3h','12h','1d','1w'], "stackable": false },
+    { "code": "1.21", "variants": ["1.21", "FreeWarrant", "freewarrant", "фриварант", "FW", "fw"], "ban_time": "30mi", "stackable": true },
+    { "code": "1.23", "variants": ["1.23", "SpawnArrest", "spawnarrest", "спавнарест", "SArrest"], "ban_time": "20mi", "stackable": true },
+    { "code": "1.24", "variants": ["1.24", "SpawnAbuse", "spawnabuse", "спавнабуз", "SAbuse"], "ban_time": "30mi", "stackable": true },
+    { "code": "1.25", "variants": ["1.25", "PassageAbuse", "passageabuse", "PA", "pa"], "ban_time": "10mi", "stackable": false },
+    { "code": "1.26", "variants": ["1.26", "KillZone", "killzone", "KZ", "kz"], "ban_time": "10mi", "stackable": false },
+    { "code": "1.27", "variants": ["1.27", "PowerGaming", "powergaming", "павергейминг", "PG", "pg"], "ban_time": "10mi", "stackable": true },
+    { "code": "1.28", "variants": ["1.28", "HealAbuse", "healabuse", "хилабуз"], "ban_time": "15mi", "stackable": true },
+    { "code": "1.29", "variants": ["1.29", "NickNameAbuse", "nicknameabuse", "NNA", "nna"], "ban_time": "10mi", "stackable": false },
+    { "code": "1.30", "variants": ["1.30", "FreeCheck", "freecheck", "фричек", "FCheck"], "ban_time": "10mi", "stackable": true },
+    { "code": "1.31", "variants": ["1.31", "FreeCuff", "freecuff", "фрикафф", "FCuff"], "ban_time": "10mi", "stackable": false },
+    { "code": "1.32", "variants": ["1.32", "MassFreeCuff", "massfreecuff", "масс фрикафф", "MFCuff"], "ban_time": "2h", "stackable": false },
+    { "code": "1.33", "variants": ["1.33", "FreeDemote", "freedemote", "FDemote"], "ban_time": "20mi", "stackable": false },
+    { "code": "1.34", "variants": ["1.34", "MassFreeDemote", "massfreedemote", "MFDemote"], "ban_time": "3h", "stackable": false },
+    { "code": "1.35", "variants": ["1.35", "Реклама", "реклама"], "ban_time": ["1w", "1mo", "perma"], "stackable": false },
+    { "code": "1.36", "variants": ["1.36", "NonRPGun", "nonrpgun", "нонрп ган", "NRPGun"], "ban_time": "15mi", "stackable": true },
+    { "code": "1.37", "variants": ["1.37", "BugAbuse", "bugabuse", "багабуз", "BA", "ba"], "ban_time": ["2h", "6h"], "stackable": true },
+    { "code": "1.38", "variants": ["1.38", "Неадекват", "неадекват"], "ban_time": "3h", "stackable": false },
+    { "code": "1.39", "variants": ["1.39", "FreeTazer", "freetazer", "фритазер", "FZ", "fz"], "ban_time": "15mi", "stackable": true },
+    { "code": "1.40", "variants": ["1.40", "OrgNameAbuse", "orgnameabuse", "ONA", "ona"], "ban_time": "10mi", "stackable": false },
+    { "code": "1.41", "variants": ["1.41", "Cheats", "cheats", "читы", "софт"], "ban_time": "perma", "stackable": false },
+    { "code": "1.42", "variants": ["1.42", "ПКС", "пкс", "краш сервера"], "ban_time": "perma", "stackable": false },
+    { "code": "1.44", "variants": ["1.44", "Помеха", "помеха"], "ban_time": "30mi", "stackable": false },
+    { "code": "1.45", "variants": ["1.45", "NonRPKill", "nonrpkill", "NRPKill"], "ban_time": "30mi", "stackable": true },
+    { "code": "1.48", "variants": ["1.48", "Рецидив", "рецидив"], "ban_time": "1w", "stackable": false },
+    { "code": "1.48.1", "variants": ["1.48.1", "Многократный Рецидив", "многократный рецидив"], "ban_time": "2w", "stackable": false },
+    { "code": "1.49", "variants": ["1.49", "NonRPRadio", "nonrpradio", "NRPR", "nrpr"], "ban_time": "15mi", "stackable": false },
+    { "code": "1.50", "variants": ["1.50", "ArmedRP", "armedrp", "армедрп", "ARP", "arp"], "ban_time": "15mi", "stackable": true },
+    { "code": "1.1.9", "variants": ["1.1.9", "помеха ивенту"], "ban_time": "3h", "stackable": false },
+    { "code": "1.1.35", "variants": ["1.1.35", "помощь в побеге"], "ban_time": "1h", "stackable": false },
+    { "code": "1.1.42", "variants": ["1.1.42", "езда за пределами дорог"], "ban_time": "10mi", "stackable": false },
+    { "code": "1.1.45", "variants": ["1.1.45", "нарушение правил банды"], "ban_time": "1h", "stackable": false },
+    { "code": "1.1.51", "variants": ["1.1.51", "использование видео"], "ban_time": "20mi", "stackable": false },
+    { "code": "1.1.54", "variants": ["1.1.54", "паркур"], "ban_time": "30mi", "stackable": false },
+    { "code": "1.1.55", "variants": ["1.1.55", "игнорирование FearRP"], "ban_time": "20mi", "stackable": true },
+    { "code": "2.1", "variants": ["2.1", "MingeBuilding", "MINGEBUILDING", "MB", "mb"], "ban_time": "20mi", "stackable": true },
+    { "code": "2.2", "variants": ["2.2", "PropBlock", "propblock", "пропблок", "PB", "pb"], "ban_time": "10mi", "stackable": true },
+    { "code": "2.3", "variants": ["2.3", "PropSpam", "propspam", "пропспам", "PS", "ps"], "ban_time": "3h", "stackable": false },
+    { "code": "2.4", "variants": ["2.4", "PropClimb", "propclimb", "PC", "pc"], "ban_time": "10mi", "stackable": true },
+    { "code": "2.5", "variants": ["2.5", "PropSurf", "propsurf", "PS", "ps"], "ban_time": "30mi", "stackable": false },
+    { "code": "2.6", "variants": ["2.6", "FadingDoorAbuse", "fadingdoorabuse", "фдабуз", "FDA", "fda"], "ban_time": "10mi", "stackable": false },
+    { "code": "2.7", "variants": ["2.7", "KeypadAbuse", "keypadabuse", "кейпадабуз", "KA", "ka"], "ban_time": "10mi", "stackable": true },
+    { "code": "2.8", "variants": ["2.8", "PropPush", "proppush"], "ban_time": "10mi", "stackable": false },
+    { "code": "2.9", "variants": ["2.9", "TextScreenAbuse", "textscreenabuse", "TSA", "tsa"], "ban_time": "10mi", "stackable": false },
+    { "code": "2.10", "variants": ["2.10", "BuildZoneAbuse", "buildzoneabuse", "BZA", "bza"], "ban_time": ["10mi", "20mi"], "stackable": false },
+    { "code": "2.11", "variants": ["2.11", "PosterAbuse", "posterabuse", "Pab", "pab"], "ban_time": "12h", "stackable": true },
+    { "code": "2.12", "variants": ["2.12", "LampAbuse", "lampabuse", "LPA", "lpa"], "ban_time": "1d", "stackable": false },
+    { "code": "ADM1.3", "variants": ["ADM1.3", "adm1.3", "оскорбление игроков админом"], "ban_time": "3d", "stackable": true },
+    { "code": "ADM1.4", "variants": ["ADM1.4", "adm1.4", "некорректная причина бана"], "ban_time": ["1d", "3d"], "stackable": true},
+    { "code": "ADM1.5", "variants": ["ADM1.5", "adm1.5"], "ban_time": ["1d", "3d"], "stackable": true },
+    { "code": "ADM1.6", "variants": ["ADM1.6", "adm1.6"], "ban_time": "1d", "stackable": true },
+    { "code": "ADM1.8", "variants": ["ADM1.8", "adm1.8"], "ban_time": "1h", "stackable": true },
+    { "code": "ADM1.12", "variants": ["ADM1.12", "adm1.12", "Admin Abuse", "adminabuse", "админабуз"], "ban_time": "3d", "stackable": true },
+    { "code": "ADM1.12.1", "variants": ["ADM1.12.1", "adm1.12.1", "sliv", "слив админки", "слив"], "ban_time": "perma", "stackable": false },
+    { "code": "ADM1.13", "variants": ["ADM1.13", "adm1.13"], "ban_time": "12h", "stackable": true },
+    { "code": "ADM1.15", "variants": ["ADM1.15", "adm1.15"], "ban_time": "1d", "stackable": true },
+    { "code": "ADM1.20", "variants": ["ADM1.20", "adm1.20", "Free ban", "freeban", "фрибан"], "ban_time": "1d", "stackable": true },
+    { "code": "ADM1.21", "variants": ["ADM1.21", "adm1.21"], "ban_time": "1h", "stackable": true }
+  ]
+};
+
+if (typeof module !== 'undefined') module.exports = rulesDatabase;
+
+function validateBanReason(ban, rulesDatabase) {
+  const result = {
+    is_valid: true,
+    is_suspicious: false,
+    messages: []
+  };
+
+  // Нормализация причины бана (убираем лишние пробелы)
+  let normalizedReason = ban.reason.trim();
+
+  // Убираем /by формат — валидируем саму причину, а не пропускаем
+  const byMatch = normalizedReason.match(/^(.+?)\s*\/by\s+(STEAM:[01]:\d+:\d+|[^\s]+)/i);
+  if (byMatch) {
+    normalizedReason = byMatch[1].trim();
+    if (!normalizedReason) return result;
+  }
+
+  // Проверка на стэк правил - поддержка форматов:
+  // 1.1+1.8, 1.1 + 1.8, NonRP+Leave, NonRP + Leave, 1.9x2
+  // Пробелы НЕ являются разделителем стэка (иначе "1.1 NonRP" = стэк двух правил)
+  const hasMultiplier = /x\d+/i.test(normalizedReason);
+  const hasPlus = /\+/.test(normalizedReason);
+
+  if (hasPlus || hasMultiplier) {
+    // Разбиваем только по +
+    const rules = normalizedReason.split(/\+/).map(r => r.trim()).filter(r => r);
+
+    let allRulesValid = true;
+    const foundRules = [];
+    const invalidRules = [];
+
+    rules.forEach(ruleCode => {
+      // Проверяем множитель (1.9x2)
+      const multiplierMatch = ruleCode.match(/^(.+?)x(\d+)$/i);
+      let actualCode = ruleCode;
+      let multiplier = 1;
+
+      if (multiplierMatch) {
+        actualCode = multiplierMatch[1];
+        multiplier = parseInt(multiplierMatch[2]);
+      }
+
+      // Ищем правило по коду или вариантам
+      const rule = findRuleByCodeOrVariant(actualCode, rulesDatabase);
+
+      if (rule) {
+        // stackable: false означает, что правило НЕЛЬЗЯ УМНОЖАТЬ (x2, x3)
+        // но МОЖНО комбинировать с другими правилами
+        // stackable: true означает, что правило МОЖНО УМНОЖАТЬ и комбинировать
+
+        // Проверяем, можно ли использовать множитель для этого правила
+        if (!rule.stackable && multiplier > 1) {
+          result.is_suspicious = true;
+          result.messages.push({
+            type: "NON_STACKABLE",
+            message: ` Правило ${rule.code} не стакается - его нельзя выдавать несколько раз (x${multiplier})`,
+            suggestion: `Правило ${rule.code} выдается только один раз, независимо от количества нарушений`,
+            admin_info: {
+              steamId: ban.adminSteamId,
+              name: ban.adminName
+            },
+            ban_info: {
+              target: `${ban.targetName} (${ban.targetSteamId})`,
+              date: new Date(ban.banTime * 1000).toLocaleString('ru-RU')
+            }
+          });
+        }
+
+        // Проверяем максимальное количество стаков для правила (например, 1.5 стакается до 2х)
+        if (rule.max_stack && multiplier > rule.max_stack) {
+          result.is_suspicious = true;
+          result.messages.push({
+            type: "OVER_STACK",
+            message: ` Правило ${rule.code} можно стакать максимум ${rule.max_stack} раза, а указано x${multiplier}`,
+            suggestion: `Максимум для ${rule.code}: x${rule.max_stack}`,
+            admin_info: {
+              steamId: ban.adminSteamId,
+              name: ban.adminName
+            },
+            ban_info: {
+              target: `${ban.targetName} (${ban.targetSteamId})`,
+              date: new Date(ban.banTime * 1000).toLocaleString('ru-RU')
+            }
+          });
+        }
+
+        foundRules.push({ rule, multiplier });
+      } else {
+        allRulesValid = false;
+        invalidRules.push(actualCode);
+      }
+    });
+
+    if (!allRulesValid) {
+      result.is_valid = false;
+      result.messages.push({
+        type: "INVALID_REASON",
+        message: ` Причина содержит несуществующие правила: "${invalidRules.join(', ')}"`,
+        suggestion: "Чет залупа какая-то, дай пизды ему.",
+        admin_info: {
+          steamId: ban.adminSteamId,
+          name: ban.adminName
+        },
+        ban_info: {
+          target: `${ban.targetName} (${ban.targetSteamId})`,
+          date: new Date(ban.banTime * 1000).toLocaleString('ru-RU')
+        }
+      });
+    } else if (foundRules.length > 0) {
+      // Генерируем все возможные комбинации времени для стака
+      const possibleTimes = calculateAllPossibleStackTimes(foundRules);
+      const actualBanSeconds = ban.banLen;
+
+      // Проверяем, совпадает ли фактическое время с одной из возможных комбинаций
+      if (!possibleTimes.includes(actualBanSeconds)) {
+        const expectedTimesStr = possibleTimes.map(s => formatSeconds(s)).join(' или ');
+        const actualTime = calculateBanLength(actualBanSeconds);
+
+        result.is_suspicious = true;
+        result.messages.push({
+          type: "SUSPICIOUS_TIME",
+          message: ` Сумма этих правил "${ban.reason}" должена давать ${expectedTimesStr}, а выдано ${actualTime}`,
+          suggestion: `Возможные варианты времени: ${expectedTimesStr}`,
+          admin_info: {
+            steamId: ban.adminSteamId,
+            name: ban.adminName
+          },
+          ban_info: {
+            target: `${ban.targetName} (${ban.targetSteamId})`,
+            date: new Date(ban.banTime * 1000).toLocaleString('ru-RU')
+          }
+        });
+      }
+    }
+
+    return result;
+  }
+
+  // Проверка 1: Существует ли правило (по коду или варианту)
+  const foundRule = findRuleByCodeOrVariant(normalizedReason, rulesDatabase);
+
+  if (!foundRule) {
+    // Проверка на похожие правила (опечатки)
+    const similarRule = findSimilarRule(normalizedReason, rulesDatabase);
+
+    if (similarRule) {
+      result.is_valid = false;
+      result.messages.push({
+        type: "INVALID_REASON",
+        message: ` Несуществующая причина бана: "${ban.reason}"`,
+        suggestion: `Возможно имелось в виду: ${similarRule.code} (${similarRule.variants.slice(0, 3).join(', ')})`,
+        admin_info: {
+          steamId: ban.adminSteamId,
+          name: ban.adminName
+        },
+        ban_info: {
+          target: `${ban.targetName} (${ban.targetSteamId})`,
+          date: new Date(ban.banTime * 1000).toLocaleString('ru-RU')
+        }
+      });
+    } else {
+      result.is_valid = false;
+      result.messages.push({
+        type: "UNKNOWN_REASON",
+        message: ` Неизвестная причина бана: "${ban.reason}"`,
+        suggestion: "Кароче хуйня эта причина, дай пизды ему.",
+        admin_info: {
+          steamId: ban.adminSteamId,
+          name: ban.adminName
+        },
+        ban_info: {
+          target: `${ban.targetName} (${ban.targetSteamId})`,
+          date: new Date(ban.banTime * 1000).toLocaleString('ru-RU')
+        }
+      });
+    }
+  } else {
+    // Проверка 2: Правильное ли время бана
+    const suspiciousCheck = checkSuspiciousBanTime(ban, rulesDatabase, foundRule);
+    if (suspiciousCheck.is_suspicious) {
+      result.is_suspicious = true;
+      result.messages.push({
+        type: "SUSPICIOUS_TIME",
+        message: suspiciousCheck.message,
+        suggestion: suspiciousCheck.suggestion,
+        admin_info: suspiciousCheck.admin_info,
+        ban_info: {
+          target: `${ban.targetName} (${ban.targetSteamId})`,
+          date: new Date(ban.banTime * 1000).toLocaleString('ru-RU')
+        }
+      });
+    }
+  }
+
+  return result;
+}
+
+// Функция для расчета всех возможных комбинаций времени при стаке правил
+function calculateAllPossibleStackTimes(foundRules) {
+  // Если любое правило в стэке = perma, весь стэк = perma
+  for (const { rule } of foundRules) {
+    const times = Array.isArray(rule.ban_time) ? rule.ban_time : [rule.ban_time];
+    if (times.includes('perma')) return [0];
+  }
+
+  let possibleTimes = [0];
+
+  // Для каждого правила в стаке
+  foundRules.forEach(({ rule, multiplier }) => {
+    const newPossibleTimes = [];
+
+    // Получаем все возможные времена для этого правила
+    let ruleTimes = [];
+    if (Array.isArray(rule.ban_time)) {
+      // Если ban_time - массив, берем все варианты
+      ruleTimes = rule.ban_time.map(t => parseTimeToSeconds(t));
+    } else {
+      // Если ban_time - строка, берем одно значение
+      ruleTimes = [parseTimeToSeconds(rule.ban_time)];
+    }
+
+    // Для каждого текущего возможного времени
+    possibleTimes.forEach(currentTime => {
+      // Для каждого варианта времени правила
+      ruleTimes.forEach(ruleTime => {
+        // Добавляем время правила с учетом множителя
+        newPossibleTimes.push(currentTime + (ruleTime * multiplier));
+      });
+    });
+
+    possibleTimes = newPossibleTimes;
+  });
+
+  return possibleTimes;
+}
+
+// Новая функция для поиска правила по коду или варианту
+function findRuleByCodeOrVariant(searchTerm, rulesDatabase) {
+  const normalized = searchTerm.toLowerCase().trim();
+
+  return rulesDatabase.rules.find(rule => {
+    // Проверяем код правила
+    if (rule.code.toLowerCase() === normalized) {
+      return true;
+    }
+
+    // Проверяем варианты
+    return rule.variants.some(variant =>
+      variant.toLowerCase() === normalized
+    );
+  });
+}
+
+function checkSuspiciousBanTime(ban, rulesDatabase, foundRule) {
+  const actualBanSeconds = ban.banLen;
+  const expectedTime = foundRule.ban_time;
+
+  // Проверяем, является ли ban_time массивом вариантов (например, ["1d", "1w", "7d"])
+  if (Array.isArray(expectedTime)) {
+    // Конвертируем все варианты в секунды
+    const validSeconds = expectedTime.map(t => parseTimeToSeconds(t));
+
+    // Проверяем, совпадает ли время бана с одним из вариантов
+    if (validSeconds.includes(actualBanSeconds)) {
+      return { is_suspicious: false };
+    }
+
+    const actualBanLength = calculateBanLength(actualBanSeconds);
+    const expectedOptions = expectedTime.join(' или ');
+    return {
+      is_suspicious: true,
+      message: ` Подозрительный бан: правило ${foundRule.code} должно давать ${expectedOptions}, а выдано ${actualBanLength}`,
+      suggestion: `Правильное время для ${foundRule.code}: ${expectedOptions}`,
+      admin_info: {
+        steamId: ban.adminSteamId,
+        name: ban.adminName
+      }
+    };
+  }
+
+  // Обычная проверка для точного времени (строка)
+  const expectedSeconds = parseTimeToSeconds(expectedTime);
+
+  // Сравниваем время в секундах - форматы эквивалентны если секунды совпадают
+  // Например: 1w = 7d = 604800 секунд, 1h = 60mi = 3600 секунд
+  if (actualBanSeconds !== expectedSeconds) {
+    const actualBanLength = calculateBanLength(actualBanSeconds);
+
+    return {
+      is_suspicious: true,
+      message: ` Подозрительный бан: правило ${foundRule.code} должно давать ${expectedTime}, а выдано ${actualBanLength}`,
+      suggestion: `Правильное время для ${foundRule.code}: ${expectedTime}`,
+      admin_info: {
+        steamId: ban.adminSteamId,
+        name: ban.adminName
+      }
+    };
+  }
+
+  return { is_suspicious: false };
+}
+
+function calculateBanLength(seconds) {
+  if (seconds === 0) return 'perma';
+
+  const months = Math.floor(seconds / (30 * 86400));
+  seconds %= (30 * 86400);
+  const weeks = Math.floor(seconds / (7 * 86400));
+  seconds %= (7 * 86400);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  let result = '';
+  if (months > 0) result += `${months}mo`;
+  if (weeks > 0) result += `${weeks}w`;
+  if (days > 0) result += `${days}d`;
+  if (hours > 0) result += `${hours}h`;
+  if (minutes > 0) result += `${minutes}mi`;
+
+  return result || '0mi';
+}
+
+function findSimilarRule(reason, rulesDatabase) {
+  let bestMatch = null;
+  let minDistance = Infinity;
+
+  rulesDatabase.rules.forEach(rule => {
+    rule.variants.forEach(variant => {
+      if (variant.length < 2) return;
+      const distance = levenshteinDistance(
+        reason.toLowerCase(),
+        variant.toLowerCase()
+      );
+
+      const maxDist = Math.min(2, Math.floor(variant.length / 3));
+      if (distance > 0 && distance <= maxDist && distance < minDistance && reason.length >= 2) {
+        minDistance = distance;
+        bestMatch = rule;
+      }
+    });
+  });
+
+  return bestMatch;
+}
+
+function levenshteinDistance(str1, str2) {
+  const matrix = [];
+
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[str2.length][str1.length];
+}
+
+function parseTimeToSeconds(timeStr) {
+  if (timeStr === 'perma') return 0;
+
+  const regex = /(\d+)(mo|mi|m|w|d|h|s)/g;
+  let totalSeconds = 0;
+  let match;
+
+  while ((match = regex.exec(timeStr)) !== null) {
+    const value = parseInt(match[1]);
+    const unit = match[2];
+
+    switch (unit) {
+      case 'mo': totalSeconds += value * 30 * 86400; break;
+      case 'w': totalSeconds += value * 7 * 86400; break;
+      case 'd': totalSeconds += value * 86400; break;
+      case 'h': totalSeconds += value * 3600; break;
+      case 'mi': case 'm': totalSeconds += value * 60; break;
+      case 's': totalSeconds += value; break;
+    }
+  }
+
+  return totalSeconds;
+}
+
+function formatSeconds(seconds) {
+  if (seconds === 0) return 'perma';
+
+  const months = Math.floor(seconds / (30 * 86400));
+  seconds %= (30 * 86400);
+  const weeks = Math.floor(seconds / (7 * 86400));
+  seconds %= (7 * 86400);
+  const days = Math.floor(seconds / 86400);
+  seconds %= 86400;
+  const hours = Math.floor(seconds / 3600);
+  seconds %= 3600;
+  const minutes = Math.floor(seconds / 60);
+
+  let result = '';
+  if (months > 0) result += `${months}mo`;
+  if (weeks > 0) result += `${weeks}w`;
+  if (days > 0) result += `${days}d`;
+  if (hours > 0) result += `${hours}h`;
+  if (minutes > 0) result += `${minutes}mi`;
+
+  return result;
+}
+
+if (typeof module !== 'undefined') module.exports = { validateBanReason };
+
+</script>
+<script>
+let totalSrv=0,filter='all',search={f:'admin',q:''},sTO=null,pg=1,PS=20,statusTimer=null;
+const valC=new Map(),avC=new Map();
+
+function toast(m,t){
+  const c=document.getElementById('tcst'),e=document.createElement('div');
+  e.className='tst';e.textContent=m;c.appendChild(e);
+  setTimeout(()=>{e.style.animation='tout .12s ease-in forwards';setTimeout(()=>e.remove(),120)},2500);
+}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function toSteam(id){if(!id||!/^\d+$/.test(id))return id;const v=BigInt(id)-76561197960265728n;const x=Number(v%2n);const y=Number((v-BigInt(x))/2n);return'STEAM_0:'+x+':'+y}
+function fromSteam(s){const m=s.match(/^STEAM_\d+:(\d+):(\d+)$/i);if(!m)return s;const x=parseInt(m[1]),y=parseInt(m[2]);return String(76561197960265728n+BigInt(y*2+x))}
+function copySid(el,s64){navigator.clipboard.writeText(toSteam(s64)).then(()=>toast('Copied: '+toSteam(s64)));event.stopPropagation()}
+
+async function checkCk(){
+  try{
+    const r=await fetch('/api/settings/cookie'),d=await r.json(),e=document.getElementById('ckSt');
+    if(!d.hasCookie){e.textContent='NO COOKIE';e.className='tb-st no'}
+    else if(d.hasToken&&d.hasCfClearance){e.textContent='OK';e.className='tb-st ok'}
+    else if(d.hasToken){e.textContent='NO CF';e.className='tb-st no'}
+    else{e.textContent='NO TOKEN';e.className='tb-st no'}
+    return d.hasCookie;
+  }catch(e){const el=document.getElementById('ckSt');el.textContent='ERR';el.className='tb-st no';return false}
+}
+async function saveCk(){
+  const v=document.getElementById('ckIn').value.trim();if(!v)return;
+  try{
+    const r=await fetch('/api/settings/cookie',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cookie:v})});
+    if((await r.json()).ok){toast('Cookie saved');checkCk();init()}
+  }catch(e){toast('Save failed')}
+}
+
+let psTO=null;
+document.getElementById('sIn').addEventListener('input',function(){
+  clearTimeout(psTO);const raw=this.value.trim();
+  if(!raw){document.getElementById('psRes').innerHTML='';clearTimeout(sTO);sTO=setTimeout(()=>{search.q='';pg=1;render()},300);return}
+  const mode=document.querySelector('.st-btn.on')?.dataset.mode||'player';
+  const converted=fromSteam(raw);
+  const isSteamId=converted!==raw;
+  if(mode==='player'){
+    psTO=setTimeout(async()=>{
+      const q=isSteamId?converted:raw;
+      try{
+        const r=await fetch('/api/player/find/'+encodeURIComponent(q));
+        if(!r.ok)throw 0;const d=await r.json();
+        const res=document.getElementById('psRes');
+        if(!d||!d.length){res.innerHTML='<div style="padding:5px;color:var(--t3);font-size:10px">Not found</div>';return}
+        res.innerHTML=d.map(p=>{
+          const name=esc(p.name||'Unknown'),sid=toSteam(p.steamID64||p.steamId||'');
+          const grp=esc(p.userGroup||''),money=(p.money||0).toLocaleString(),ht=Math.floor((p.playTime||0)/3600),mt=Math.floor(((p.playTime||0)%3600)/60);
+          return`<div class="ps-item" onclick="showProfile('${p.steamID64||p.steamId||''}');document.getElementById('psRes').innerHTML=''">${avEl(p.steamID64||p.steamId||'',name,28)}<div style="flex:1;min-width:0"><div class="pn">${name}</div><div class="pid" onclick="event.stopPropagation();copySid(this,'${p.steamID64||p.steamId||''}')">${sid}</div></div><div style="text-align:right"><div style="font-family:var(--m);font-size:9px;color:var(--t2)">${grp}</div><div style="font-family:var(--m);font-size:9px;color:var(--t3)">${ht}h ${mt}m | $${money}</div></div></div>`;
+        }).join('');
+      }catch(e){document.getElementById('psRes').innerHTML='<div style="padding:5px;color:var(--t2);font-size:10px">Error</div>'}
+    },300);
+  }else{
+    document.getElementById('psRes').innerHTML='';
+    clearTimeout(sTO);sTO=setTimeout(()=>{
+      if(isSteamId){search.q=converted;search.f='player'}
+      else{search.q=raw.toLowerCase();search.f=document.getElementById('sType').value}
+      pg=1;render()
+    },300);
+  }
+});
+document.querySelectorAll('.st-btn').forEach(b=>b.addEventListener('click',function(){
+  document.querySelectorAll('.st-btn').forEach(x=>x.classList.remove('on'));this.classList.add('on');
+  const mode=this.dataset.mode,sIn=document.getElementById('sIn'),sType=document.getElementById('sType'),psRes=document.getElementById('psRes');
+  if(mode==='player'){sIn.placeholder='SteamID or name...';sType.style.display='none';search.f='player';psRes.innerHTML=''}
+  else{sIn.placeholder='Search bans...';sType.style.display='';search.f=sType.value;psRes.innerHTML=''}
+  search.q='';sIn.value='';pg=1;render()
+}));
+document.getElementById('sType').addEventListener('change',function(){search.f=this.value;if(search.q){pg=1;render()}});
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',function(){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));this.classList.add('on');filter=this.dataset.f;pg=1;render()}));
+
+function getVal(b){const k=b.adminSteamId+'|'+b.targetSteamId+'|'+b.banTime+'|'+b.reason;if(!valC.has(k))try{valC.set(k,validateBanReason(b,rulesDatabase))}catch(e){valC.set(k,{is_valid:true,is_suspicious:false,messages:[]})}return valC.get(k)}
+function banLen(s){if(s===0)return'PERMA';const y=s/31536000|0;let r=s%31536000;const mo=r/2592000|0;r%=2592000;const w=r/604800|0;r%=604800;const d=r/86400|0;r%=86400;const h=r/3600|0;r%=3600;const m=r/60|0;let o=[];if(y)o.push(y+'y');if(mo)o.push(mo+'mo');if(w)o.push(w+'w');if(d)o.push(d+'d');if(h)o.push(h+'h');if(m)o.push(m+'m');return o.join(' ')||'0m'}
+function getBadge(b,ct){
+  const v=getVal(b);
+  const hasErr=!v.is_valid||v.is_suspicious;
+  const hasUnbanReason=b.unbanReason!=null&&b.unbanReason!=='';
+  const unbanned=hasUnbanReason;
+  const expired=!unbanned&&b.banLen>0&&(b.banTime+b.banLen)<ct;
+  const isOld=expired||unbanned;
+  let sb='',sc='ok',extraCls='';
+  if(hasErr){sb='ОШИБКА';sc='er';if(unbanned)extraCls=' strike'}
+  else if(unbanned){sb='РАЗБАН';sc='su'}
+  else if(expired){sb='ОТСИД';sc='su'}
+  else if(b.banLen===0){sb='ПЕРМА';sc='su'}
+  else sb='ОК';
+  return{sb,sc,ub:isOld,extraCls}
+}
+
+let currentPageBans=[];
+let currentProfileBans=[];
+function nameColor(n){let h=0;for(let i=0;i<n.length;i++)h=((h<<5)-h)+n.charCodeAt(i)|0;const l=70+Math.abs(h)%20;return`hsl(0,0%,${l}%)`}
+function avEl(id,name,sz){const u=avC.get(id);if(u)return`<img src="${u}" class="av" style="width:${sz}px;height:${sz}px" alt="" loading="lazy">`;const ch=(name||'?')[0].toUpperCase();return`<div class="av-init" style="width:${sz}px;height:${sz}px;font-size:${sz*0.4}px;line-height:${sz}px" data-av="${id}">${ch}</div>`}
+async function fetchAv(ids){
+  const u=ids.filter(id=>id&&!avC.has(id));if(!u.length)return;
+  try{const r=await fetch('/api/steam/avatars?steamIds='+u.join(','));if(!r.ok)return;const d=await r.json();Object.entries(d).forEach(([k,v])=>{if(v)avC.set(k,v)})}catch(e){}
+}
+function applyAvatars(){
+  document.querySelectorAll('[data-av]').forEach(el=>{
+    const sid=el.dataset.av,url=avC.get(sid);
+    if(!url)return;
+    const img=document.createElement('img');img.src=url;img.className='av';img.style.cssText=el.style.cssText;img.loading='lazy';el.replaceWith(img);
+  });
+}
+async function loadAvatars(ids){
+  await fetchAv(ids);applyAvatars();
+  const stillMissing=ids.filter(id=>!avC.get(id));
+  if(stillMissing.length){
+    await new Promise(r=>setTimeout(r,1500));
+    await fetchAv(stillMissing);applyAvatars();
+  }
+}
+async function loadPage(){
+  const tb=document.getElementById('tbody');currentPageBans=[];
+  try{
+    const params=new URLSearchParams({page:pg-1,pageSize:PS,filter,searchField:search.f,searchQuery:search.q});
+    const r=await fetch('/api/bans?'+params);
+    if(r.status===401){tb.innerHTML='<tr><td colspan="7"><div class="empty">No cookie set</div></td></tr>';return}
+    const d=await r.json();totalSrv=d.total;
+    if(!d.items||!d.items.length){tb.innerHTML='<tr><td colspan="7"><div class="empty">No bans found</div></td></tr>';document.getElementById('pag').style.display='none';return}
+    currentPageBans=d.items;
+    const ct=Date.now()/1000|0;
+    tb.innerHTML=d.items.map((b,i)=>{
+      const{sb,sc,ub,extraCls}=getBadge(b,ct);
+      return`<tr onclick="showDetailByIdx(${i})">`+
+        `<td><span class="badge ${sc}${extraCls||''}">${sb}</span></td>`+
+        `<td><div class="player-cell">${avEl(b.adminSteamId,b.adminName,24)}<div><div class="name"><a href="#" onclick="event.stopPropagation();showProfile('${b.adminSteamId}');return false">${esc(b.adminName||'')}</a></div><div class="sid" onclick="copySid(this,'${b.adminSteamId}')">${toSteam(b.adminSteamId)}</div></div></div></td>`+
+        `<td><div class="player-cell">${avEl(b.targetSteamId,b.targetName,24)}<div><div class="name"><a href="#" onclick="event.stopPropagation();showProfile('${b.targetSteamId}');return false">${esc(b.targetName||'')}</a></div><div class="sid" onclick="copySid(this,'${b.targetSteamId}')">${toSteam(b.targetSteamId)}</div></div></div></td>`+
+        `<td class="mono">${esc(b.reason)}</td>`+
+        `<td class="mono bold">${banLen(b.banLen)}</td>`+
+        `<td class="mono sm">${new Date(b.banTime*1e3).toLocaleString('ru-RU')}</td>`+
+        `<td style="text-align:center;color:var(--t3)">&#8250;</td>`+
+      `</tr>`;
+    }).join('');
+    const tp=Math.ceil(totalSrv/PS),pe=document.getElementById('pag');
+    if(tp>1){pe.style.display='flex';document.getElementById('ppBtn').disabled=pg<=1;document.getElementById('npBtn').disabled=pg>=tp;document.getElementById('pgInfo').textContent=pg+' / '+tp+' ('+totalSrv.toLocaleString()+')';renderPageNums(pg,tp)}else pe.style.display='none';
+    const ids=new Set;d.items.forEach(b=>{ids.add(b.adminSteamId);ids.add(b.targetSteamId)});
+    loadAvatars([...ids]);
+  }catch(e){console.error('loadPage error:',e);tb.innerHTML=`<tr><td colspan="7"><div class="empty">Error: ${esc(e.message||'unknown')}</div></td></tr>`}
+}
+function render(){loadPage()}function chPg(d){const np=pg+d;if(np<1)return;pg=np;render()}function goPg(p){pg=p;render()}
+function renderPageNums(cur,total){
+  const c=document.getElementById('pgNums');if(!c)return;c.innerHTML='';
+  const maxShow=7;let start=Math.max(1,cur-3),end=Math.min(total,start+maxShow-1);
+  if(end-start<maxShow-1)start=Math.max(1,end-maxShow+1);
+  for(let i=start;i<=end;i++){const b=document.createElement('button');b.className='pgb'+(i===cur?' on':'');b.textContent=i;b.onclick=()=>goPg(i);c.appendChild(b)}
+}
+function showDetailByIdx(i){if(currentPageBans[i])showDetailByBan(currentPageBans[i])}
+
+function showDetailByBan(b){
+  if(!b)return;
+  const ct=Date.now()/1000|0,{sb,sc,ub}=getBadge(b,ct);
+  const v=getVal(b);
+  let ih='';
+  if(v.messages.length){ih='<div class="dmsg">'+v.messages.map(m=>`<div class="dmsg-v">${esc(m.type||'Issue')}</div><div>${esc(m.message)}</div>${m.suggestion?'<div class="dsug">'+esc(m.suggestion)+'</div>':''}`).join('')+'</div>'}
+  const o=document.createElement('div');o.className='dov';o.onclick=e=>{if(e.target===o)o.remove()};
+  o.innerHTML=`<div class="modal"><div class="modal-hdr">${avEl(b.targetSteamId,b.targetName,44)}<div class="modal-info"><div class="modal-name">${esc(b.targetName)}</div><div class="modal-sid" onclick="copySid(this,'${b.targetSteamId}')">${toSteam(b.targetSteamId)}</div></div><button class="modal-close" onclick="this.closest('.dov').remove()">&#10005;</button></div><div class="modal-body" style="padding-top:8px"><div class="drow"><span class="dlbl">Status</span><span class="dval"><span class="badge ${sc}${extraCls||''}">${sb}</span></span></div><div class="drow"><span class="dlbl">Admin</span><span class="dval">${avEl(b.adminSteamId,b.adminName,16)}<a href="#" onclick="showProfile('${b.adminSteamId}');this.closest('.dov').remove();return false" style="color:var(--t);text-decoration:none">${esc(b.adminName)}</a></span></div><div class="drow"><span class="dlbl">Reason</span><span class="dval">${esc(b.reason)}</span></div><div class="drow"><span class="dlbl">Duration</span><span class="dval" style="font-weight:700;color:#aaa">${banLen(b.banLen)}</span></div><div class="drow"><span class="dlbl">Date</span><span class="dval" style="font-size:9px;color:var(--t2)">${new Date(b.banTime*1e3).toLocaleString('ru-RU')}</span></div>${ub&&b.unbanReason?`<div class="drow"><span class="dlbl">Unban</span><span class="dval" style="color:var(--t3)">${esc(b.unbanReason)}</span></div>`:''}${ih}</div></div>`;
+  document.body.appendChild(o);
+}
+
+async function showProfile(steamId){
+  if(!steamId||!/^\d+$/.test(steamId)){toast('Invalid SteamID');return}
+  const o=document.createElement('div');o.className='dov';o.onclick=e=>{if(e.target===o)o.remove()};
+  o.innerHTML='<div class="modal"><div class="ldc" style="padding:30px"><div class="ldsp"></div><div class="ldt">Loading</div></div></div>';
+  document.body.appendChild(o);
+  const ct=Date.now()/1000|0;
+  const [bansRes,playerRes]=await Promise.all([
+    fetch('/api/player/'+steamId+'/bans').then(r=>r.ok?r.json():[]).catch(()=>[]),
+    fetch('/api/player/'+steamId).then(r=>r.ok?r.json():null).catch(()=>null)
+  ]);
+  const bans=bansRes;
+  let playerName=steamId,playerData=null;
+  if(playerData===null){const p=Array.isArray(playerRes)?playerRes[0]||{}:playerRes||{};if(p&&p.name){playerName=p.name;playerData=p}}
+  if(!playerName||playerName===steamId){if(bans.length>0)playerName=bans[0].targetSteamId===steamId?bans[0].targetName:bans[0].adminName}
+  currentProfileBans=bans;
+  let bh='';
+  if(bans.length){
+    bh=bans.map((b,i)=>{
+      const{sb,sc,ub,extraCls}=getBadge(b,ct);
+      const ur=ub&&b.unbanReason?`<div class="ban-card-ureason">Unban: ${esc(b.unbanReason)}</div>`:'';
+      return`<div class="ban-card" onclick="showDetailByBan(currentProfileBans[${i}])"><div class="ban-card-top"><span class="badge ${sc}${extraCls||''}">${sb}</span><span class="ban-card-reason">${esc(b.reason||'')}</span><span class="ban-card-dur">${banLen(b.banLen)}</span></div><div class="ban-card-bot"><a href="#" onclick="event.stopPropagation();showProfile('${b.adminSteamId}');this.closest('.dov').remove();return false">${esc(b.adminName||'?')}</a><span class="ban-card-arrow">&#10132;</span><a href="#" onclick="event.stopPropagation();showProfile('${b.targetSteamId}');this.closest('.dov').remove();return false">${esc(b.targetName||'?')}</a><span class="ban-card-date">${new Date(b.banTime*1e3).toLocaleString('ru-RU')}</span></div>${ur}</div>`;
+    }).join('');
+  }else bh='<div class="ban-empty">No bans</div>';
+  const p=playerData||{};
+  const h=Math.floor((p.playTime||0)/3600),mi=Math.floor(((p.playTime||0)%3600)/60);
+  o.querySelector('.modal').innerHTML=`<div class="modal-hdr">${avEl(steamId,playerName,52)}<div class="modal-info"><div class="modal-name">${esc(playerName)}</div><div class="modal-sid" onclick="copySid(this,'${steamId}')">${toSteam(steamId)}</div><div class="modal-grp">${esc(p.userGroup||'')}</div></div><button class="modal-close" onclick="this.closest('.dov').remove()">&#10005;</button></div><div class="modal-stats"><div class="modal-st"><div class="modal-st-v">${h||mi?h+'h '+mi+'m':'-'}</div><div class="modal-st-l">Playtime</div></div><div class="modal-st"><div class="modal-st-v">${(p.money||0).toLocaleString()}</div><div class="modal-st-l">Money</div></div><div class="modal-st"><div class="modal-st-v">${bans.length}</div><div class="modal-st-l">Bans</div></div></div><div class="modal-body"><div class="modal-section-l">Ban history</div>${bh}</div>`;
+  const allIds=[steamId,...bans.flatMap(b=>[b.adminSteamId,b.targetSteamId]).filter(Boolean)];
+  loadAvatars([...new Set(allIds)]);
+}
+
+async function updateStats(){
+  try{const r=await fetch('/api/bans/stats'),d=await r.json();document.getElementById('suspChip').textContent=(d.suspicious||0)+' susp';document.getElementById('invChip').textContent=(d.invalid||0)+' inv'}catch(e){}
+}
+function pollStatus(){
+  if(statusTimer)clearInterval(statusTimer);
+  const load=document.getElementById('tbLoad'),loadIn=document.getElementById('tbLoadIn'),loadTxt=document.getElementById('tbLoadTxt');
+  load.style.display='';let fps=false,fetching=false;
+  statusTimer=setInterval(async()=>{
+    if(fetching)return;fetching=true;
+    try{
+      const r=await fetch('/api/bans/status'),d=await r.json();totalSrv=d.total||0;
+      loadIn.style.width=d.progress+'%';loadTxt.textContent=d.loading?d.progress+'%':'';
+      if(d.loadedCount>0&&!fps){fps=true;loadPage();updateStats()}
+      if(!d.loading&&d.loaded){
+        clearInterval(statusTimer);statusTimer=null;loadIn.style.width='100%';loadIn.classList.add('done');
+        loadTxt.textContent='';setTimeout(()=>{load.style.display='none'},2000);toast('Bans loaded');loadPage();updateStats();
+      }
+    }catch(e){}finally{fetching=false}
+  },1000);
+}
+function resetLoad(){pg=1;currentPageBans=[];fetch('/api/bans/reload',{method:'POST'}).then(()=>pollStatus()).catch(()=>{});toast('Reloading...')}
+async function init(){
+  try{
+    const r=await fetch('/api/bans/status'),d=await r.json();totalSrv=d.total||0;
+    const tb=document.getElementById('tbody');
+    if(!d.hasCookie){
+      tb.innerHTML='<tr><td colspan="7"><div class="empty" style="padding:40px"><div style="font-weight:600;margin-bottom:6px">No cookie set</div><div style="color:var(--t3);font-size:10px">Open settings (gear icon) and paste your browser Cookie</div></div></td></tr>';
+      return;
+    }
+    if(!d.hasToken||!d.hasCfClearance){
+      const missing=!d.hasToken?'Token':'cf_clearance';
+      tb.innerHTML=`<tr><td colspan="7"><div class="empty" style="padding:40px"><div style="font-weight:600;margin-bottom:6px">Missing ${missing}</div><div style="color:var(--t3);font-size:10px">Copy full Cookie header from browser DevTools (needs both Token and cf_clearance)</div></div></td></tr>`;
+      return;
+    }
+    if(d.loaded&&!d.loading){loadPage();updateStats()}
+    else if(d.loading){pollStatus()}
+    else if(d.total===0&&!d.loading){
+      tb.innerHTML='<tr><td colspan="7"><div class="empty" style="padding:40px"><div class="ldsp" style="margin-bottom:10px"></div><div style="font-weight:600;margin-bottom:4px">Connecting to server...</div><div style="color:var(--t3);font-size:10px">If this persists, your cookie may be expired. Update via settings (gear icon)</div></div></td></tr>';
+      pollStatus();
+    }
+    else{
+      const load=document.getElementById('tbLoad'),loadIn=document.getElementById('tbLoadIn'),loadTxt=document.getElementById('tbLoadTxt');
+      load.style.display='';loadIn.style.width='0%';loadTxt.textContent='...';pollStatus();fetch('/api/bans/reload',{method:'POST'}).catch(()=>{});
+    }
+  }catch(e){}
+}
+checkCk();init();
+let reconnectTimer=null,autoRefreshTimer=null;
+function checkReconnect(){
+  if(reconnectTimer)return;
+  reconnectTimer=setInterval(async()=>{
+    try{
+      const r=await fetch('/api/bans/status'),d=await r.json();
+      if(d.loading||d.loaded||d.total>0){clearInterval(reconnectTimer);reconnectTimer=null;init()}
+    }catch(e){}
+  },10000);
+}
+function startAutoRefresh(){
+  if(autoRefreshTimer)return;
+  autoRefreshTimer=setInterval(async()=>{
+    if(pg!==1)return;
+    try{
+      const r=await fetch('/api/bans/status'),d=await r.json();
+      if(d.loadedCount!==totalSrv){totalSrv=d.loadedCount;loadPage();updateStats()}
+    }catch(e){}
+  },30000);
+}
+startAutoRefresh();
+checkReconnect();
+document.addEventListener('click',e=>{const p=document.getElementById('ckPanel');if(p.classList.contains('show')&&!p.contains(e.target)&&e.target.id!=='ckCog'&&!e.target.closest('#ckCog'))p.classList.remove('show')});
+</script>
+</body>
+</html>
+
