@@ -1,0 +1,252 @@
+═══════════════════════════════════════════════════════
+         BAN CHECKER — ПОЛНЫЙ ГАЙД
+═══════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────
+ СТРУКТУРА ПРОЕКТА
+───────────────────────────────────────────────────────
+
+ban-checker-exe/
+├── update/              ← ТУТ ТЫ МЕНЯЕШЬ КОД
+│   ├── server.js        → Сервер, API, обновления, автооткрытие браузера
+│   ├── checker.js       → Логика проверки банов (валидация причин)
+│   ├── rules.js         → Список правил (добавлять/менять правила тут)
+│   └── index.html       → Весь фронтенд (HTML + CSS + JS)
+├── scripts/
+│   └── build.js         → Скрипт сборки EXE
+├── .github/workflows/
+│   └── release.yml      → Автосборка на GitHub при пуше тега
+├── dist/
+│   └── ban-checker.exe  ← ГОТОВЫЙ EXE (его даёшь другу)
+├── package.json         → Версия, зависимости, настройки билда
+└── .gitignore
+
+───────────────────────────────────────────────────────
+ ФАЙЛЫ — ЗА ЧТО ОТВЕЧАЮТ
+───────────────────────────────────────────────────────
+
+update/server.js
+  - HTTP сервер на порту 3000
+  - API маршруты (/api/bans, /api/player, /api/settings, итд)
+  - При запуске: сервер фоном → браузер открывается сам
+  - Проверка обновлений с GitHub
+  - Скачивание и замена EXЕ при обнове
+  - База данных в %APPDATA%/ban-checker/ (переживёт обнову)
+
+update/checker.js
+  - validateBanReason() — главная функция проверки
+  - Проверяет: существует ли правило, правильное ли время бана
+  - Поддержка стэка правил (1.1+1.8), множителей (1.9x2)
+  - Levenshtein distance для поиска опечаток
+
+update/rules.js
+  - Массив правил rulesDatabase.rules
+  - Каждое правило: code, variants, ban_time, stackable, max_stack
+  - Чтобы добавить правило — добавь объект в массив
+
+update/index.html
+  - Весь фронтенд в одном файле (HTML + CSS + JS)
+  - Таблица банов, поиск, модалки, аватарки
+  - Оверлей обновлений — если есть обнова, блокирует экран
+
+scripts/build.js
+  - Собирает EXE через pkg
+  - Патчит PE subsystem: Console → GUI (нет чёрного окна)
+  - Включает в EXE: node.js runtime, твой код, sql-wasm.wasm, index.html
+
+.github/workflows/release.yml
+  - При пуше тега (v1.0.0, v1.0.1...) GitHub автоматически:
+    1. Поднимает Windows сервер
+    2. npm install + npm run build
+    3. Создаёт Release и крепит ban-checker.exe
+
+package.json
+  - version — версия проекта (ОБЯЗАТЕЛЬНО менять при обнове)
+  - pkg.assets — файлы которые включаются в EXЕ
+  - scripts.build — команда npm run build
+
+───────────────────────────────────────────────────────
+ ПЕРВЫЙ РАЗ — НАСТРОЙКА (один раз)
+───────────────────────────────────────────────────────
+
+1. Установи зависимости:
+   cd C:\Users\Administrator\Desktop\Projects\modelki\ban-checker-exe
+   npm install
+
+2. Создай репозиторий на GitHub:
+   - Зайди на github.com → New repository
+   - Назови: ban-checker
+   - Public или Private (Public = друг качает без приглашения)
+   - НЕ ставь галки на README/gitignore/License
+   - Create repository
+
+3. Узнай свой ник на GitHub (правый верхний угол)
+
+4. Настрой git:
+   git config --global user.email "твоя@почта.com"
+   git config --global user.name "ТвойНик"
+
+5. Впиши репо в код:
+   Открой update/server.js, строка 10:
+   const UPDATE_REPO = 'ТвойНик/ban-checker';
+   (например: 'vasya123/ban-checker')
+
+6. Залей на GitHub:
+   git init
+   git remote add origin https://github.com/ТвойНик/ban-checker.git
+   git add .
+   git commit -m "initial"
+   git branch -M main
+   git push -u origin main
+
+   Если спросит пароль — нужен Personal Access Token:
+   github.com → Settings → Developer settings →
+   Personal access tokens → Tokens (classic) → Generate new token
+   Галка: repo (полный доступ)
+   Когда git спросит пароль — вставь токен
+
+───────────────────────────────────────────────────────
+ ПЕРВАЯ ВЕРСИЯ — ВЫЛОЖИТЬ EXE (один раз)
+───────────────────────────────────────────────────────
+
+1. Собери EXE:
+   npm run build
+
+2. Проверь что работает:
+   Двойной клик на dist/ban-checker.exe
+   Должен открыться браузер с сайтом
+
+3. Убей процесс:
+   taskkill /f /im ban-checker.exe
+
+4. Выложи на GitHub:
+   git tag v1.0.0
+   git push origin v1.0.0
+
+5. Подожди 3-5 минут. Зайди на страницу репо → Actions
+   Увидишь процесс сборки. Когда закончится —
+   зайди в Releases — там будет ban-checker.exe
+
+6. Этот файл даёшь другу
+
+───────────────────────────────────────────────────────
+ КАК ДЕЛАТЬ ОБНОВЫ (каждый раз)
+───────────────────────────────────────────────────────
+
+1. Меняешь код в папке update/
+   - server.js   — сервер
+   - checker.js   — валидатор
+   - rules.js     — правила
+   - index.html   — фронтенд
+
+2. ОБЯЗАТЕЛЬНО обнови версию в ДВУХ местах:
+
+   a) package.json, строка 3:
+      "version": "1.0.1"
+      (было 1.0.0 → стало 1.0.1)
+
+   b) update/server.js, строка 9:
+      const APP_VERSION = '1.0.1';
+      (было 1.0.0 → стало 1.0.1)
+
+3. Собери EXE и проверь:
+   taskkill /f /im ban-checker.exe
+   npm run build
+   Двойной клик на dist/ban-checker.exe → проверить
+
+4. Отправить другу напрямую:
+   Скинуть файл dist/ban-checker.exe
+
+5. Выложить на GitHub (для автообновлений у всех):
+
+   git add .
+   git commit -m "описание что поменял"
+   git tag v1.0.1
+   git push origin main --tags
+
+   GitHub Actions соберёт EXЕ и добавит в Releases.
+
+───────────────────────────────────────────────────────
+ КАК РАБОТАЮТ ОБНОВЛЕНИЯ У ДРУГА
+───────────────────────────────────────────────────────
+
+1. Друг запускает ban-checker.exe
+2. EXE проверяет GitHub: есть ли новый релиз?
+3. Если да → фронтенд показывает ЧЁРНЫЙ ЭКРАН:
+   "UPDATE AVAILABLE"
+   "New version v1.0.1 is available"
+   Кнопка: "Download and Update"
+4. Друг жмёт кнопку
+5. Сервер скачивает новый EXE с GitHub
+6. Создаёт ban-checker.exe.updater.bat:
+   - Ждёт 2 секунды
+   - Переименовывает старый EXE в .old
+   - Переименовывает скачанный в ban-checker.exe
+   - Запускает новый EXE
+   - Удаляет батник
+7. Старый процесс убивается
+8. Новый EXЕ запускается автоматически
+
+Результат: Тот ЖЕ файл ban-checker.exe обновился на месте.
+Никуда ничего кидать не надо. Ничего устанавливать не надо.
+
+───────────────────────────────────────────────────────
+ ШПАРГАЛКА КОМАНД
+───────────────────────────────────────────────────────
+
+| Действие                    | Команда                              |
+|-----------------------------|--------------------------------------|
+| Установить зависимости      | npm install                          |
+| Собрать EXE                 | npm run build                        |
+| Убить запущенный EXE        | taskkill /f /im ban-checker.exe      |
+| Проверить что работает      | Двойной клик на dist/ban-checker.exe |
+| Отправить другу             | Скинуть dist/ban-checker.exe         |
+| Выложить обнову на GitHub   | git add .                            |
+|                             | git commit -m "что поменял"          |
+|                             | git tag v1.x.x                       |
+|                             | git push origin main --tags          |
+| Первый пуш на GitHub        | git init                             |
+|                             | git remote add origin URL            |
+|                             | git add .                            |
+|                             | git commit -m "initial"              |
+|                             | git branch -M main                   |
+|                             | git push -u origin main              |
+
+───────────────────────────────────────────────────────
+ НУМЕРАЦИЯ ВЕРСИЙ
+───────────────────────────────────────────────────────
+
+Формат: vMAJOR.MINOR.PATCH
+
+v1.0.0 → первая версия
+v1.0.1 → мелкий фикс (баг, опечатка)
+v1.1.0 → новое правило, новый функционал
+v2.0.0 → большое изменение
+
+Каждая обнова = +1 к последней цифре
+(или +1 к средней если что-то новое)
+
+───────────────────────────────────────────────────────
+ ЧАСТЫЕ ПРОБЛЕМЫ
+───────────────────────────────────────────────────────
+
+EPERM: operation not permitted, unlink
+  → EXE запущен. Убей: taskkill /f /im ban-checker.exe
+
+Repository not found
+  → Не создал репо на GitHub, или неправильный URL
+  → Проверь: git remote -v
+  → Исправь: git remote set-url origin https://github.com/НИК/РЕПО.git
+
+Author identity unknown
+  → git config --global user.email "почта"
+  → git config --global user.name "ник"
+
+src refspec main does not match any
+  → git branch -M main
+
+Обновление не появляется у друга
+  → Проверь что UPDATE_REPO правильно вписан в server.js
+  → Проверь что тег запушен: git push origin v1.0.x
+  → Зайди в Actions на GitHub — сборка прошла?
+  → Зайди в Releases — EXЕ там есть?

@@ -158,6 +158,15 @@ td{padding:7px 12px;vertical-align:middle}
 .dsug{margin-top:2px;padding:4px 7px;background:rgba(255,255,255,.01);border-left:2px solid var(--t2);border-radius:0 3px 3px 0;font-size:9px;color:var(--t2)}
 .dmsg-v{font-size:10px;font-weight:600;margin-bottom:1px}
 
+.update-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;animation:tin .15s ease-out}
+.update-box{text-align:center;max-width:420px;padding:40px}
+.update-box h2{font-family:var(--m);font-size:18px;font-weight:700;margin-bottom:12px;color:#fff}
+.update-box p{font-size:13px;color:#888;margin-bottom:24px;line-height:1.6}
+.update-box .ver{font-family:var(--m);color:#aaa;font-weight:600}
+.update-btn{padding:12px 32px;background:#fff;color:#000;border:none;border-radius:6px;font-family:var(--m);font-size:13px;font-weight:700;cursor:pointer;transition:.12s}
+.update-btn:hover{background:#ddd}
+.update-btn:disabled{opacity:.5;cursor:not-allowed}
+
 @media(max-width:900px){
   .topbar{padding:6px 10px;min-height:42px;height:auto;flex-wrap:wrap;gap:4px}
   .wrap{padding:6px 8px}
@@ -1010,6 +1019,35 @@ async function init(){
   }catch(e){}
 }
 checkCk();init();
+
+(function checkUpdate(){
+  fetch('/api/update/check').then(r=>r.json()).then(d=>{
+    if(!d.available)return;
+    const ov=document.createElement('div');ov.className='update-overlay';
+    ov.innerHTML=`<div class="update-box"><h2>UPDATE AVAILABLE</h2><p>New version <span class="ver">v${d.version}</span> is available.<br>Current: <span class="ver">v${d.current}</span></p><button class="update-btn" id="updateBtn" onclick="applyUpdate()">Download and Update</button></div>`;
+    document.body.appendChild(ov);
+  }).catch(()=>{});
+  setInterval(()=>{
+    fetch('/api/update/check').then(r=>r.json()).then(d=>{
+      if(!d.available)return;
+      if(document.querySelector('.update-overlay'))return;
+      const ov=document.createElement('div');ov.className='update-overlay';
+      ov.innerHTML=`<div class="update-box"><h2>UPDATE AVAILABLE</h2><p>New version <span class="ver">v${d.version}</span> is available.<br>Current: <span class="ver">v${d.current}</span></p><button class="update-btn" id="updateBtn" onclick="applyUpdate()">Download and Update</button></div>`;
+      document.body.appendChild(ov);
+    }).catch(()=>{});
+  },60000);
+})();
+
+async function applyUpdate(){
+  const btn=document.getElementById('updateBtn');if(!btn)return;
+  btn.disabled=true;btn.textContent='Downloading...';
+  try{
+    const r=await fetch('/api/update/apply',{method:'POST'});
+    const d=await r.json();
+    if(d.ok){btn.textContent='Restarting...';setTimeout(()=>{btn.textContent='Server is restarting...'},3000)}
+    else{btn.disabled=false;btn.textContent='Download and Update';toast('Update failed')}
+  }catch(e){btn.disabled=false;btn.textContent='Download and Update';toast('Update failed')}
+}
 let reconnectTimer=null,autoRefreshTimer=null;
 function checkReconnect(){
   if(reconnectTimer)return;

@@ -7,7 +7,7 @@ const { exec, spawn } = require('child_process');
 
 const isPackaged = typeof process.pkg !== 'undefined';
 const APP_VERSION = '1.0.0';
-const UPDATE_REPO = '';
+const UPDATE_REPO = 'srkallian/ban-checker';
 
 const rulesDatabase = require('./rules.js');
 const { validateBanReason } = require('./checker.js');
@@ -331,8 +331,32 @@ function fromSteamId(s) {
   return String(76561197960265728n + BigInt(parseInt(m[2]) * 2 + parseInt(m[1])));
 }
 
+let updateInfo = null;
+
 const server = http.createServer(async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'GET' && req.url === '/api/update/check') {
+    res.end(JSON.stringify(updateInfo ? { available: true, version: updateInfo.version, current: APP_VERSION } : { available: false, current: APP_VERSION }));
+    return;
+  }
+
+  if (req.method === 'POST' && req.url === '/api/update/apply') {
+    if (!updateInfo) { res.end(JSON.stringify({ error: 'no update' })); return; }
+    res.end(JSON.stringify({ ok: true }));
+    applyUpdateNow();
+    return;
+  }
+
+  if (updateInfo && isPackaged) {
+    if (req.url === '/' || req.url === '/index.html' || req.url.startsWith('/api/update')) {
+      // allow through
+    } else {
+      res.writeHead(503);
+      res.end(JSON.stringify({ error: 'update required', version: updateInfo.version }));
+      return;
+    }
+  }
 
   if (req.method === 'POST' && req.url === '/api/settings/cookie') {
     try {
@@ -564,8 +588,6 @@ function boot() {
 }
 
 async function main() {
-  applyPendingUpdate();
-
   const sqlJs = require('sql.js');
   const sqlJsOpts = {};
   if (isPackaged) {
@@ -610,28 +632,6 @@ main().catch(e => { console.error('Startup error:', e); process.exit(1); });
 
 module.exports = server;
 
-function applyPendingUpdate() {
-  if (!isPackaged) return;
-  const exePath = process.execPath;
-  const updatePath = exePath + '.update';
-  const oldPath = exePath + '.old';
-  if (!fs.existsSync(updatePath)) {
-    if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath); } catch(e) {} }
-    return;
-  }
-  console.log('Applying pending update...');
-  try {
-    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-    fs.renameSync(exePath, oldPath);
-    fs.renameSync(updatePath, exePath);
-    spawn(exePath, [], { detached: true, stdio: 'ignore' }).unref();
-    process.exit(0);
-  } catch (e) {
-    console.error('Failed to apply update:', e.message);
-    try { if (fs.existsSync(updatePath)) fs.unlinkSync(updatePath); } catch(e2) {}
-  }
-}
-
 async function checkForUpdates() {
   if (!UPDATE_REPO) return;
   try {
@@ -645,13 +645,34 @@ async function checkForUpdates() {
     if (!latest || latest === APP_VERSION) return;
     const asset = (release.assets || []).find(a => a.name && a.name.endsWith('.exe'));
     if (!asset) { console.log(`Update v${latest} available, no EXE asset.`); return; }
-    console.log(`Update available: v${latest}. Downloading...`);
-    const data = await downloadFile(asset.browser_download_url);
-    if (data) {
-      fs.writeFileSync(process.execPath + '.update', data);
-      console.log(`Update v${latest} downloaded. Restart to apply.`);
-    }
+    console.log(`Update available: v${latest}`);
+    updateInfo = { version: latest, downloadUrl: asset.browser_download_url };
+    if (isPackaged) setInterval(() => checkForUpdates, 300000);
   } catch (e) { console.log('Update check failed:', e.message); }
+}
+
+async function applyUpdateNow() {
+  if (!updateInfo) return;
+  const exePath = process.execPath;
+  const updatePath = exePath + '.update';
+  const batPath = exePath + '.updater.bat';
+  try {
+    console.log('Downloading update...');
+    const data = await downloadFile(updateInfo.downloadUrl);
+    if (!data) { console.error('Download failed'); updateInfo = null; return; }
+    fs.writeFileSync(updatePath, data);
+    const exeName = path.basename(exePath);
+    const exeDir = path.dirname(exePath);
+    const bat = `@echo off\r\ntimeout /t 2 /nobreak >nul\r\ndel "${exePath}.old" 2>nul\r\nren "${exePath}" "${exeName}.old"\r\nren "${updatePath}" "${exeName}"\r\nstart "" "${exePath}"\r\ndel "${batPath}"\r\n`;
+    fs.writeFileSync(batPath, bat);
+    spawn('cmd.exe', ['/c', batPath], { detached: true, stdio: 'ignore' }).unref();
+    console.log('Update applied, restarting...');
+    process.exit(0);
+  } catch (e) {
+    console.error('Update apply failed:', e.message);
+    try { if (fs.existsSync(updatePath)) fs.unlinkSync(updatePath); } catch(e2) {}
+    updateInfo = null;
+  }
 }
 
 function downloadFile(url) {
