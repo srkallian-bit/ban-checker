@@ -2,12 +2,10 @@
 *
 
 # Allow specific files
-!.gitignore
 !dist/
 !dist/ban-checker.exe
 !README.md
 !CHANGELOG.md
-!GUIDE.txt
 
 # Don't allow these even inside allowed dirs
 dist/*.tmp
