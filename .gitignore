@@ -1,0 +1,16 @@
+# Ignore everything by default
+*
+
+# Allow specific files
+!.gitignore
+!dist/
+!dist/ban-checker.exe
+!README.md
+!CHANGELOG.md
+!GUIDE.txt
+
+# Don't allow these even inside allowed dirs
+dist/*.tmp
+dist/*.old
+dist/*.update
+dist/*.updater.bat
